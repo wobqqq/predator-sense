@@ -1,0 +1,49 @@
+#!/bin/bash
+# battery — Predator battery charge limit & calibration (Linuwu-Sense).
+#   battery                    show status
+#   battery limit on|off       80% charge limit (battery health)
+#   battery calibrate start    start calibration cycle (takes HOURS, don't interrupt)
+#   battery calibrate stop     stop calibration
+PS=/sys/devices/platform/acer-wmi/predator_sense
+LIM=$PS/battery_limiter
+CAL=$PS/battery_calibration
+BAT=$(ls -d /sys/class/power_supply/BAT* 2>/dev/null | head -1)
+
+w() {   # write $2 to file $1
+    if [ ! -w "$1" ]; then echo "no write permission on $1 (linuwu_sense group?)" >&2; exit 1; fi
+    echo "$2" > "$1" || { echo "write error: $1" >&2; exit 1; }
+}
+
+status() {
+    local lim cal cap st
+    lim=$(cat "$LIM" 2>/dev/null); cal=$(cat "$CAL" 2>/dev/null)
+    cap=$(cat "$BAT/capacity" 2>/dev/null); st=$(cat "$BAT/status" 2>/dev/null)
+    echo "charge now  : ${cap:-?}%  ($st)"
+    echo "80% limit   : $([ "$lim" = 1 ] && echo ON || echo off)"
+    echo "calibration : $([ "$cal" = 1 ] && echo 'RUNNING (do not interrupt)' || echo inactive)"
+}
+
+case "${1:-status}" in
+    status|"") status ;;
+    limit)
+        case "$2" in
+            on)  w "$LIM" 1; echo "80% charge limit: ON" ;;
+            off) w "$LIM" 0; echo "80% charge limit: off" ;;
+            *)   echo "usage: battery limit on|off" >&2; exit 1 ;;
+        esac ;;
+    calibrate|calibration)
+        case "$2" in
+            start)
+                echo "WARNING: calibration = full charge->discharge, takes HOURS, do not interrupt."
+                echo "Starting..."; w "$CAL" 1; echo "calibration started" ;;
+            stop)
+                w "$CAL" 0; echo "calibration stopped" ;;
+            *)
+                echo "usage: battery calibrate start|stop"
+                echo "(rarely needed - only if the battery % is inaccurate)" ;;
+        esac ;;
+    -h|--help|help)
+        echo "usage: battery [status | limit on|off | calibrate start|stop]" ;;
+    *)
+        echo "usage: battery [status | limit on|off | calibrate start|stop]" >&2; exit 1 ;;
+esac

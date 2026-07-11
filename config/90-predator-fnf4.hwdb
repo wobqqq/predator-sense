@@ -1,0 +1,7 @@
+# Acer Predator PT316-51s: Fn+F4 controls the keyboard backlight, but it also
+# emits KEY_BRIGHTNESSDOWN (scancode 0xef) which makes GNOME dim the SCREEN.
+# The screen has its own brightness keys, so suppress this spurious scancode.
+# The keyboard backlight itself is driven by firmware via scancode 0xf7 and is
+# unaffected by this remap.
+evdev:atkbd:dmi:bvn*:bvr*:bd*:svnAcer*:pnPredator*
+ KEYBOARD_KEY_ef=reserved

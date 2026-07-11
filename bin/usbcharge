@@ -1,0 +1,30 @@
+#!/bin/bash
+# usbcharge — charge USB devices from the laptop battery while it is off/asleep.
+# The value is a battery threshold: keep charging until the laptop battery
+# drops to that %. Allowed: 0 (off), 10, 20, 30.
+#   usbcharge            show status
+#   usbcharge off        disable
+#   usbcharge 10|20|30   enable, stop when battery reaches that %
+UC=/sys/devices/platform/acer-wmi/predator_sense/usb_charging
+
+w() {
+    [ -w "$UC" ] || { echo "no write permission on $UC (linuwu_sense group?)" >&2; exit 1; }
+    echo "$1" > "$UC" || { echo "write error (allowed: 0, 10, 20, 30)" >&2; exit 1; }
+}
+
+cur=$(cat "$UC" 2>/dev/null)
+
+case "${1:-status}" in
+    status|"")
+        if [ "$cur" = "0" ]; then
+            echo "USB charging while off: disabled"
+        else
+            echo "USB charging while off: enabled (until battery drops to ${cur}%)"
+        fi ;;
+    off)          w 0;  echo "USB charging while off: disabled" ;;
+    10|20|30)     w "$1"; echo "USB charging while off: enabled (until ${1}%)" ;;
+    -h|--help|help)
+        echo "usage: usbcharge [status|off|10|20|30]" ;;
+    *)
+        echo "usage: usbcharge [status|off|10|20|30]  (threshold %)" >&2; exit 1 ;;
+esac

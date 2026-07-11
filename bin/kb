@@ -1,0 +1,99 @@
+#!/bin/bash
+# kb — control the Predator RGB keyboard backlight (Linuwu-Sense).
+# The keyboard is physically 3-zone; the driver's 4th zone is a phantom that
+# reads back as an invalid value, so we manage 3 zones and mirror zone3 -> zone4.
+# The last applied state is saved to $STATE so a boot service can restore it
+# (the driver's own persistence is unreliable).
+#   kb status                       show current state
+#   kb color RRGGBB [bright]        solid color on all zones
+#   kb zones Z1 Z2 Z3               per-zone colors (RRGGBB each)
+#   kb bright N                     set brightness 0..100 (keeps colors)
+#   kb effect NAME [speed] [RRGGBB] animated effect
+#   kb timeout on|off               keyboard backlight auto-off timeout
+#   kb off                          turn backlight off (brightness 0)
+#
+# effects: static breathing neon wave shifting zoom meteor twinkling
+KB=/sys/devices/platform/acer-wmi/four_zoned_kb
+PZ=$KB/per_zone_mode
+FZ=$KB/four_zone_mode
+BLT=/sys/devices/platform/acer-wmi/predator_sense/backlight_timeout
+STATE=/var/lib/predator-sense/kb.state
+
+declare -A EFFECT=( [static]=0 [breathing]=1 [neon]=2 [wave]=3 [shifting]=4 [zoom]=5 [meteor]=6 [twinkling]=7 )
+
+is_hex6() { [[ "$1" =~ ^[0-9a-fA-F]{6}$ ]]; }
+is_num()  { [[ "$1" =~ ^[0-9]+$ ]] && [ "$1" -ge 0 ] && [ "$1" -le "$2" ]; }
+
+save() { [ -w "$STATE" ] 2>/dev/null && printf '%s\n' "$1" > "$STATE" 2>/dev/null; }
+
+read_state() {
+    local c; c=$(cat "$PZ" 2>/dev/null)
+    IFS=',' read -r Z1 Z2 Z3 _z4 BR <<< "$c"
+    is_hex6 "$Z1" || Z1=ffffff
+    is_hex6 "$Z2" || Z2=ffffff
+    is_hex6 "$Z3" || Z3=ffffff
+    is_num "$BR" 100 || BR=100
+}
+
+wz() { [ -w "$PZ" ] || { echo "no write permission on $PZ" >&2; exit 1; }; echo "$1" > "$PZ" || { echo "write error (check zone format RRGGBB)" >&2; exit 1; }; save "PZ:$1"; }
+wf() { [ -w "$FZ" ] || { echo "no write permission on $FZ" >&2; exit 1; }; echo "$1" > "$FZ" || { echo "write error" >&2; exit 1; }; save "FZ:$1"; }
+
+set_zones() { wz "$1,$2,$3,$3,$4"; }
+
+case "${1:-status}" in
+    status|"")
+        read_state
+        echo "zones: $Z1 / $Z2 / $Z3    brightness: $BR"
+        echo "raw per_zone : $(cat $PZ 2>/dev/null)"
+        echo "raw four_zone: $(cat $FZ 2>/dev/null)"
+        ;;
+    color)
+        hex=$2; read_state; br=${3:-$BR}
+        is_hex6 "$hex" || { echo "color = RRGGBB (hex), e.g. ff0000" >&2; exit 1; }
+        is_num "$br" 100 || br=100
+        set_zones "$hex" "$hex" "$hex" "$br"
+        echo "color $hex on all zones, brightness $br"
+        ;;
+    zones)
+        z1=$2; z2=$3; z3=$4
+        for z in "$z1" "$z2" "$z3"; do is_hex6 "$z" || { echo "usage: kb zones Z1 Z2 Z3  (each = RRGGBB hex)" >&2; exit 1; }; done
+        read_state
+        set_zones "$z1" "$z2" "$z3" "$BR"
+        echo "zones: $z1 / $z2 / $z3, brightness $BR"
+        ;;
+    bright)
+        n=$2; is_num "$n" 100 || { echo "brightness 0..100" >&2; exit 1; }
+        read_state
+        set_zones "$Z1" "$Z2" "$Z3" "$n"
+        echo "brightness: $n"
+        ;;
+    off)
+        read_state
+        set_zones "$Z1" "$Z2" "$Z3" 0
+        echo "backlight off (brightness 0)"
+        ;;
+    effect)
+        name=$2; sp=${3:-5}; hex=${4:-ffffff}
+        m=${EFFECT[$name]}
+        [ -z "$m" ] && { echo "effects: static breathing neon wave shifting zoom meteor twinkling" >&2; exit 1; }
+        is_num "$sp" 9 || sp=5
+        is_hex6 "$hex" || hex=ffffff
+        r=$((16#${hex:0:2})); g=$((16#${hex:2:2})); b=$((16#${hex:4:2}))
+        read_state
+        wf "$m,$sp,$BR,1,$r,$g,$b"
+        echo "effect '$name' (mode=$m), speed $sp, color $hex, brightness $BR"
+        ;;
+    timeout)
+        case "$2" in
+            on)  [ -w "$BLT" ] && echo 1 > "$BLT" && echo "backlight auto-off: ON" || echo "cannot write $BLT" >&2 ;;
+            off) [ -w "$BLT" ] && echo 0 > "$BLT" && echo "backlight auto-off: off" || echo "cannot write $BLT" >&2 ;;
+            *)   echo "backlight auto-off: $([ "$(cat $BLT 2>/dev/null)" = 1 ] && echo ON || echo off)"
+                 echo "usage: kb timeout on|off" ;;
+        esac ;;
+    -h|--help|help)
+        echo "usage: kb [status|color RRGGBB [br]|zones Z1 Z2 Z3|bright N|effect NAME [speed] [RRGGBB]|timeout on|off|off]"
+        echo "effects: static breathing neon wave shifting zoom meteor twinkling"
+        ;;
+    *)
+        echo "unknown: $1  (kb help)" >&2; exit 1 ;;
+esac

@@ -1,0 +1,11 @@
+[Unit]
+Description=Restore Predator keyboard backlight (predator-sense)
+After=systemd-modules-load.service
+Wants=systemd-modules-load.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/predator-kb-restore
+
+[Install]
+WantedBy=multi-user.target

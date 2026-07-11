@@ -1,0 +1,42 @@
+#!/bin/bash
+# temps — live view of Predator CPU/GPU temperatures and fan RPM (Linuwu-Sense).
+# Usage: temps         -> live view, refresh every 1s (Ctrl+C to quit)
+#        temps once    -> print once and exit
+
+find_hw() {
+    for d in /sys/devices/platform/acer-wmi/hwmon/hwmon*; do
+        [ "$(cat "$d/name" 2>/dev/null)" = "acer" ] && { echo "$d"; return; }
+    done
+}
+
+show() {
+    local HW; HW=$(find_hw)
+    if [ -z "$HW" ]; then
+        echo "acer hwmon not found (is the linuwu_sense module loaded?)"
+        return 1
+    fi
+    local PP; PP=$(cat /sys/firmware/acpi/platform_profile 2>/dev/null)
+    local t1 t2 t3 f1 f2
+    t1=$(( $(cat "$HW/temp1_input" 2>/dev/null || echo 0) / 1000 ))
+    t2=$(( $(cat "$HW/temp2_input" 2>/dev/null || echo 0) / 1000 ))
+    t3=$(( $(cat "$HW/temp3_input" 2>/dev/null || echo 0) / 1000 ))
+    f1=$(cat "$HW/fan1_input" 2>/dev/null || echo 0)
+    f2=$(cat "$HW/fan2_input" 2>/dev/null || echo 0)
+    printf "Profile: %s\n" "${PP:-?}"
+    printf "CPU temp : %3d C     CPU fan : %5d RPM\n" "$t1" "$f1"
+    printf "GPU temp : %3d C     GPU fan : %5d RPM\n" "$t3" "$f2"
+    [ "$t2" -gt 0 ] && printf "dGPU temp: %3d C\n" "$t2" || printf "dGPU temp: asleep (0)\n"
+}
+
+if [ "$1" = "once" ]; then
+    show
+else
+    while true; do
+        clear
+        echo "== Predator temps ==  $(date '+%H:%M:%S')"
+        show || exit 1
+        echo
+        echo "(Ctrl+C to quit)"
+        sleep 1
+    done
+fi

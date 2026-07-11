@@ -1,0 +1,32 @@
+#!/bin/bash
+# turbo — toggle/query the Predator "turbo" mode from the console.
+# Turbo ON  == platform profile "performance" (turbo LED lights up).
+# Turbo OFF == platform profile "balanced".
+PP=/sys/firmware/acpi/platform_profile
+TURBO=performance
+OFF=balanced
+HELPER=/usr/local/bin/predator-profile-set
+
+set_profile() {           # passwordless via sudoers helper
+    sudo "$HELPER" "$1"
+}
+
+cur=$(cat "$PP" 2>/dev/null)
+
+case "${1:-toggle}" in
+    on)      set_profile "$TURBO" ;;
+    off)     set_profile "$OFF" ;;
+    toggle)  [ "$cur" = "$TURBO" ] && set_profile "$OFF" || set_profile "$TURBO" ;;
+    status)  ;;
+    -h|--help|help)
+        echo "usage: turbo [on|off|toggle|status]"; exit 0 ;;
+    *)
+        echo "usage: turbo [on|off|toggle|status]"; exit 1 ;;
+esac
+
+cur=$(cat "$PP" 2>/dev/null)
+if [ "$cur" = "$TURBO" ]; then
+    echo "turbo: ON   (profile: $cur, LED on)"
+else
+    echo "turbo: OFF  (profile: $cur, LED off)"
+fi

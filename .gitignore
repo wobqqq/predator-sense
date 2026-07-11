@@ -1,0 +1,14 @@
+# kernel module build artifacts
+driver/src/*.o
+driver/src/*.ko
+driver/src/*.mod
+driver/src/*.mod.c
+driver/src/.*.cmd
+driver/*.o
+driver/*.mod*
+driver/.*.cmd
+driver/Module.symvers
+driver/modules.order
+driver/.tmp_versions/
+*.bak
+*.bak2

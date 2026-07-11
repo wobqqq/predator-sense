@@ -1,0 +1,56 @@
+#!/bin/bash
+# fan — control the Predator CPU/GPU fans (Linuwu-Sense).
+#   fan            show current fan mode + temps/RPM
+#   fan auto       firmware-controlled (default)
+#   fan max        both fans 100%
+#   fan N          both fans N%   (0..100)
+#   fan C G        CPU C%, GPU G% (0 = auto for that fan)
+FS=/sys/devices/platform/acer-wmi/predator_sense/fan_speed
+
+find_hw() {
+    for d in /sys/devices/platform/acer-wmi/hwmon/hwmon*; do
+        [ "$(cat "$d/name" 2>/dev/null)" = "acer" ] && { echo "$d"; return; }
+    done
+}
+
+valid() { [[ "$1" =~ ^[0-9]+$ ]] && [ "$1" -ge 0 ] && [ "$1" -le 100 ]; }
+
+set_fan() {   # $1=cpu $2=gpu
+    if [ ! -w "$FS" ]; then
+        echo "no write permission on $FS (are you in the linuwu_sense group? re-login needed?)" >&2
+        exit 1
+    fi
+    echo "$1,$2" > "$FS" || { echo "write error" >&2; exit 1; }
+}
+
+status() {
+    local HW cur t1 t3 f1 f2
+    cur=$(cat "$FS" 2>/dev/null)
+    HW=$(find_hw)
+    t1=$(( $(cat "$HW/temp1_input" 2>/dev/null || echo 0) / 1000 ))
+    t3=$(( $(cat "$HW/temp3_input" 2>/dev/null || echo 0) / 1000 ))
+    f1=$(cat "$HW/fan1_input" 2>/dev/null || echo 0)
+    f2=$(cat "$HW/fan2_input" 2>/dev/null || echo 0)
+    local mode="manual ($cur)"
+    [ "$cur" = "0,0" ] && mode="auto"
+    [ "$cur" = "100,100" ] && mode="max"
+    echo "fan mode: $mode"
+    echo "CPU: ${t1}C / ${f1} RPM     GPU: ${t3}C / ${f2} RPM"
+}
+
+case "${1:-status}" in
+    status|"") status ;;
+    auto)      set_fan 0 0;   echo "fan mode: auto" ;;
+    max)       set_fan 100 100; echo "fan mode: max (100/100)" ;;
+    -h|--help|help)
+        echo "usage: fan [status|auto|max|N|C G]  (N,C,G = 0..100 %)" ;;
+    *)
+        if valid "$1" && [ -z "$2" ]; then
+            set_fan "$1" "$1"; echo "both fans: $1%"
+        elif valid "$1" && valid "$2"; then
+            set_fan "$1" "$2"; echo "CPU: $1%  GPU: $2%"
+        else
+            echo "invalid values. usage: fan [status|auto|max|N|C G] (0..100)" >&2
+            exit 1
+        fi ;;
+esac
