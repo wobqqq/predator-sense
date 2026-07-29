@@ -64,6 +64,12 @@ install: all
 	sudo depmod -a
 	@echo "$(MODNAME)" | sudo tee /etc/modules-load.d/$(MODNAME).conf > /dev/null
 	sudo modprobe $(MODNAME)
+	$(MAKE) config
+
+# Everything except the module file itself: unload service, group and sysfs
+# permissions. Split out of `install` so the DKMS path in ../install.sh can
+# reuse it once DKMS has built and placed the module.
+config:
 	@sleep 2
 	@sudo cp linuwu_sense.service /etc/systemd/system/
 	@sudo systemctl daemon-reload
@@ -102,4 +108,6 @@ install: all
 		echo "Warning: Could not detect predator_sense or nitro_sense in sysfs."; \
 	fi
 	@echo "Module $(MODNAME) installed and configured to load at boot."
+
+.PHONY: all clean install uninstall config
 

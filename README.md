@@ -62,8 +62,10 @@ installer auto-detects the package manager for build dependencies:
 | Arch | `pacman` | supported |
 | openSUSE | `zypper` | supported |
 
-Requirements: a **systemd**-based distro, kernel headers + `gcc`/`make`, and
-**Secure Boot disabled** (the module is unsigned — or sign it yourself via MOK).
+Requirements: a **systemd**-based distro, kernel headers + `gcc`/`make`, `dkms`
+(installed automatically, and what keeps the module alive across kernel
+upgrades), and **Secure Boot disabled** (the module is unsigned — or sign it
+yourself via MOK).
 
 ---
 
@@ -86,8 +88,33 @@ sudo ./uninstall.sh
 
 Restores the stock `acer_wmi` driver and removes everything. Reboot afterwards.
 
-> **Kernel updates:** there is no DKMS setup, so after a kernel upgrade just
-> re-run `sudo ./install.sh` to rebuild the module.
+### Kernel updates
+
+The driver is registered with **DKMS**, so a kernel upgrade (`dnf upgrade`, a
+Fedora release upgrade, …) rebuilds the module automatically for the new kernel
+— nothing to re-run, and your settings keep working after the reboot.
+
+Check it any time with:
+
+```bash
+dkms status linuwu-sense
+```
+
+You should see one line per installed kernel, each ending in `installed`. If a
+kernel is missing there, its headers weren't available at upgrade time — install
+them and rebuild:
+
+```bash
+sudo dnf install "kernel-devel-$(uname -r)"     # Fedora; use the equivalent elsewhere
+sudo dkms autoinstall
+```
+
+Re-running `sudo ./install.sh` is still safe and idempotent, and is what you
+want after editing the driver source.
+
+> **Secure Boot:** with Secure Boot enabled, DKMS signs each rebuild with its own
+> MOK key (`/etc/dkms/framework.conf`), which you must enrol once via `mokutil`.
+> The simpler route remains disabling Secure Boot.
 
 ---
 
