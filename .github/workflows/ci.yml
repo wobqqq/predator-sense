@@ -4,6 +4,7 @@ on:
   pull_request:
   push:
     branches: [main]
+  workflow_call:
   schedule:
     # Fedora ships new kernels often; a weekly build catches an API change before a user does.
     - cron: '23 4 * * 1'
