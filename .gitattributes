@@ -1,0 +1,12 @@
+* text=auto eol=lf
+
+*.c diff=cpp
+*.md diff=markdown
+
+/.claude export-ignore
+/.github export-ignore
+/tests export-ignore
+/.editorconfig export-ignore
+/.gitattributes export-ignore
+/AGENTS.md export-ignore
+/CLAUDE.md export-ignore

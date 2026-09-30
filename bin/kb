@@ -13,11 +13,12 @@
 #   kb off                          turn backlight off (brightness 0)
 #
 # effects: static breathing neon wave shifting zoom meteor twinkling
-KB=/sys/devices/platform/acer-wmi/four_zoned_kb
+SYSFS=${PREDATOR_SENSE_SYSFS:-/sys}
+KB=$SYSFS/devices/platform/acer-wmi/four_zoned_kb
 PZ=$KB/per_zone_mode
 FZ=$KB/four_zone_mode
-BLT=/sys/devices/platform/acer-wmi/predator_sense/backlight_timeout
-STATE=/var/lib/predator-sense/kb.state
+BLT=$SYSFS/devices/platform/acer-wmi/predator_sense/backlight_timeout
+STATE=${PREDATOR_SENSE_STATE:-/var/lib/predator-sense}/kb.state
 
 declare -A EFFECT=( [static]=0 [breathing]=1 [neon]=2 [wave]=3 [shifting]=4 [zoom]=5 [meteor]=6 [twinkling]=7 )
 
@@ -44,25 +45,25 @@ case "${1:-status}" in
     status|"")
         read_state
         echo "zones: $Z1 / $Z2 / $Z3    brightness: $BR"
-        echo "raw per_zone : $(cat $PZ 2>/dev/null)"
-        echo "raw four_zone: $(cat $FZ 2>/dev/null)"
+        echo "raw per_zone : $(cat "$PZ" 2>/dev/null)"
+        echo "raw four_zone: $(cat "$FZ" 2>/dev/null)"
         ;;
     color)
-        hex=$2; read_state; br=${3:-$BR}
+        hex=${2:-}; read_state; br=${3:-$BR}
         is_hex6 "$hex" || { echo "color = RRGGBB (hex), e.g. ff0000" >&2; exit 1; }
         is_num "$br" 100 || br=100
         set_zones "$hex" "$hex" "$hex" "$br"
         echo "color $hex on all zones, brightness $br"
         ;;
     zones)
-        z1=$2; z2=$3; z3=$4
+        z1=${2:-}; z2=${3:-}; z3=${4:-}
         for z in "$z1" "$z2" "$z3"; do is_hex6 "$z" || { echo "usage: kb zones Z1 Z2 Z3  (each = RRGGBB hex)" >&2; exit 1; }; done
         read_state
         set_zones "$z1" "$z2" "$z3" "$BR"
         echo "zones: $z1 / $z2 / $z3, brightness $BR"
         ;;
     bright)
-        n=$2; is_num "$n" 100 || { echo "brightness 0..100" >&2; exit 1; }
+        n=${2:-}; is_num "$n" 100 || { echo "brightness 0..100" >&2; exit 1; }
         read_state
         set_zones "$Z1" "$Z2" "$Z3" "$n"
         echo "brightness: $n"
@@ -73,8 +74,8 @@ case "${1:-status}" in
         echo "backlight off (brightness 0)"
         ;;
     effect)
-        name=$2; sp=${3:-5}; hex=${4:-ffffff}
-        m=${EFFECT[$name]}
+        name=${2:-}; sp=${3:-5}; hex=${4:-ffffff}
+        m=${EFFECT[$name]:-}
         [ -z "$m" ] && { echo "effects: static breathing neon wave shifting zoom meteor twinkling" >&2; exit 1; }
         is_num "$sp" 9 || sp=5
         is_hex6 "$hex" || hex=ffffff
@@ -84,11 +85,17 @@ case "${1:-status}" in
         echo "effect '$name' (mode=$m), speed $sp, color $hex, brightness $BR"
         ;;
     timeout)
-        case "$2" in
-            on)  [ -w "$BLT" ] && echo 1 > "$BLT" && echo "backlight auto-off: ON" || echo "cannot write $BLT" >&2 ;;
-            off) [ -w "$BLT" ] && echo 0 > "$BLT" && echo "backlight auto-off: off" || echo "cannot write $BLT" >&2 ;;
-            *)   echo "backlight auto-off: $([ "$(cat $BLT 2>/dev/null)" = 1 ] && echo ON || echo off)"
-                 echo "usage: kb timeout on|off" ;;
+        case "${2:-}" in
+            on|off)
+                v=0; [ "$2" = on ] && v=1
+                if [ -w "$BLT" ] && echo "$v" > "$BLT"; then
+                    if [ "$v" = 1 ]; then echo "backlight auto-off: ON"; else echo "backlight auto-off: off"; fi
+                else
+                    echo "cannot write $BLT" >&2; exit 1
+                fi ;;
+            *)
+                if [ "$(cat "$BLT" 2>/dev/null)" = 1 ]; then echo "backlight auto-off: ON"; else echo "backlight auto-off: off"; fi
+                echo "usage: kb timeout on|off" ;;
         esac ;;
     -h|--help|help)
         echo "usage: kb [status|color RRGGBB [br]|zones Z1 Z2 Z3|bright N|effect NAME [speed] [RRGGBB]|timeout on|off|off]"

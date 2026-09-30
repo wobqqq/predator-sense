@@ -1,0 +1,45 @@
+name: Hardware report
+description: Tell us whether predator-sense works on your laptop
+labels: [hardware]
+body:
+  - type: input
+    id: model
+    attributes:
+      label: Laptop model
+      description: Output of `cat /sys/class/dmi/id/product_name`
+    validations:
+      required: true
+  - type: input
+    id: bios
+    attributes:
+      label: BIOS version
+      description: Output of `cat /sys/class/dmi/id/bios_version`
+    validations:
+      required: true
+  - type: input
+    id: kernel
+    attributes:
+      label: Kernel and distro
+    validations:
+      required: true
+  - type: checkboxes
+    id: works
+    attributes:
+      label: What works
+      options:
+        - label: turbo / profile
+        - label: fan
+        - label: temps
+        - label: battery
+        - label: kb (RGB keyboard)
+        - label: usbcharge
+        - label: Fn+F4 fix
+  - type: textarea
+    id: dkms
+    attributes:
+      label: Output of `dkms status linuwu-sense`
+      render: shell
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything that does not work

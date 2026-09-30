@@ -5,10 +5,11 @@
 #   fan max        both fans 100%
 #   fan N          both fans N%   (0..100)
 #   fan C G        CPU C%, GPU G% (0 = auto for that fan)
-FS=/sys/devices/platform/acer-wmi/predator_sense/fan_speed
+SYSFS=${PREDATOR_SENSE_SYSFS:-/sys}
+FS=$SYSFS/devices/platform/acer-wmi/predator_sense/fan_speed
 
 find_hw() {
-    for d in /sys/devices/platform/acer-wmi/hwmon/hwmon*; do
+    for d in "$SYSFS"/devices/platform/acer-wmi/hwmon/hwmon*; do
         [ "$(cat "$d/name" 2>/dev/null)" = "acer" ] && { echo "$d"; return; }
     done
 }
@@ -45,9 +46,9 @@ case "${1:-status}" in
     -h|--help|help)
         echo "usage: fan [status|auto|max|N|C G]  (N,C,G = 0..100 %)" ;;
     *)
-        if valid "$1" && [ -z "$2" ]; then
+        if valid "$1" && [ -z "${2:-}" ]; then
             set_fan "$1" "$1"; echo "both fans: $1%"
-        elif valid "$1" && valid "$2"; then
+        elif valid "$1" && valid "${2:-}"; then
             set_fan "$1" "$2"; echo "CPU: $1%  GPU: $2%"
         else
             echo "invalid values. usage: fan [status|auto|max|N|C G] (0..100)" >&2

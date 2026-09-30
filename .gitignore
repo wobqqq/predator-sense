@@ -12,3 +12,8 @@ driver/modules.order
 driver/.tmp_versions/
 *.bak
 *.bak2
+
+# editors
+/.idea/
+/.vscode/
+/.claude/settings.local.json
