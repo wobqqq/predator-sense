@@ -7,6 +7,7 @@ kernel driver into a fully working control stack for Acer Predator laptops:
 thermal profiles, a real Turbo-button toggle, fan control, RGB keyboard, battery
 health, temperature monitoring — all as simple console commands.
 
+[![CI](https://github.com/wobqqq/predator-sense/actions/workflows/ci.yml/badge.svg)](https://github.com/wobqqq/predator-sense/actions/workflows/ci.yml)
 ![license](https://img.shields.io/badge/license-GPL--3.0-blue)
 ![platform](https://img.shields.io/badge/platform-Linux-informational)
 ![tested](https://img.shields.io/badge/tested%20on-Predator%20PT316--51s-brightgreen)
@@ -72,7 +73,7 @@ yourself via MOK).
 ## Install
 
 ```bash
-git clone https://github.com/<you>/predator-sense.git
+git clone https://github.com/wobqqq/predator-sense.git
 cd predator-sense
 sudo ./install.sh
 ```
@@ -187,6 +188,21 @@ usbcharge 10|20|30   enable, stop at that battery %
 - The turbo **LED** is a firmware indicator (real turbo state) — it cannot be
   driven from software and may only light on AC power / under load.
 - The keyboard is physically **3-zone** (the driver exposes a phantom 4th zone).
+
+---
+
+## Development
+
+Everything runs in Docker; only `docker` and `make` are needed:
+
+```bash
+make lint    # ShellCheck + bash -n on every script
+make test    # bats tests against a fake sysfs, no hardware touched
+make build   # builds the driver against the newest Fedora kernel
+make ready   # all of the above
+```
+
+CI runs the same on every pull request, and builds the driver every week so a new Fedora kernel that breaks it is caught early. Changes go through pull requests; see [CONTRIBUTING.md](CONTRIBUTING.md). Found a laptop where it works (or doesn't)? Open a **Hardware report** issue.
 
 ---
 
