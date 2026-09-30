@@ -1,11 +1,11 @@
 #!/bin/bash
 # predator-kb-restore — reapply the saved keyboard backlight at boot.
 # The state file holds a single line: "PZ:<per_zone_value>" or "FZ:<four_zone_value>".
-STATE=/var/lib/predator-sense/kb.state
-KB=/sys/devices/platform/acer-wmi/four_zoned_kb
+STATE=${PREDATOR_SENSE_STATE:-/var/lib/predator-sense}/kb.state
+KB=${PREDATOR_SENSE_SYSFS:-/sys}/devices/platform/acer-wmi/four_zoned_kb
 
 # wait for the driver sysfs to appear (module load after boot)
-for _ in $(seq 1 40); do
+for _ in $(seq 1 "${PREDATOR_SENSE_WAIT:-40}"); do
     [ -e "$KB/per_zone_mode" ] && break
     sleep 0.5
 done

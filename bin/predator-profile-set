@@ -1,7 +1,8 @@
 #!/bin/bash
 # Privileged helper: set the Acer platform profile. Only accepts the four
 # known profiles so it is safe to expose via a NOPASSWD sudoers rule.
-p="$1"
+# It runs as root, so it deliberately reads no environment variable.
+p="${1:-}"
 case "$p" in
     quiet|balanced|balanced-performance|performance)
         echo "$p" > /sys/firmware/acpi/platform_profile

@@ -4,10 +4,11 @@
 #   battery limit on|off       80% charge limit (battery health)
 #   battery calibrate start    start calibration cycle (takes HOURS, don't interrupt)
 #   battery calibrate stop     stop calibration
-PS=/sys/devices/platform/acer-wmi/predator_sense
+SYSFS=${PREDATOR_SENSE_SYSFS:-/sys}
+PS=$SYSFS/devices/platform/acer-wmi/predator_sense
 LIM=$PS/battery_limiter
 CAL=$PS/battery_calibration
-BAT=$(ls -d /sys/class/power_supply/BAT* 2>/dev/null | head -1)
+BAT=$(find "$SYSFS/class/power_supply/" -maxdepth 1 -name 'BAT*' 2>/dev/null | sort | head -1)
 
 w() {   # write $2 to file $1
     if [ ! -w "$1" ]; then echo "no write permission on $1 (linuwu_sense group?)" >&2; exit 1; fi
@@ -26,13 +27,13 @@ status() {
 case "${1:-status}" in
     status|"") status ;;
     limit)
-        case "$2" in
+        case "${2:-}" in
             on)  w "$LIM" 1; echo "80% charge limit: ON" ;;
             off) w "$LIM" 0; echo "80% charge limit: off" ;;
             *)   echo "usage: battery limit on|off" >&2; exit 1 ;;
         esac ;;
     calibrate|calibration)
-        case "$2" in
+        case "${2:-}" in
             start)
                 echo "WARNING: calibration = full charge->discharge, takes HOURS, do not interrupt."
                 echo "Starting..."; w "$CAL" 1; echo "calibration started" ;;

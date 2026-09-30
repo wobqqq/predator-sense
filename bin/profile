@@ -1,19 +1,20 @@
 #!/bin/bash
 # profile — switch/query the platform power profile from the console.
 # The turbo-button LED follows automatically (lit only on "performance").
-PP=/sys/firmware/acpi/platform_profile
-HELPER=/usr/local/bin/predator-profile-set
+SYSFS=${PREDATOR_SENSE_SYSFS:-/sys}
+PP=$SYSFS/firmware/acpi/platform_profile
+HELPER=${PREDATOR_SENSE_BIN:-/usr/local/bin}/predator-profile-set
 
 case "${1:-status}" in
     status|"")
-        echo "current: $(cat $PP)"
+        echo "current: $(cat "$PP")"
         ;;
     list)
-        echo "available: $(cat /sys/firmware/acpi/platform_profile_choices)"
+        echo "available: $(cat "$SYSFS/firmware/acpi/platform_profile_choices")"
         ;;
     quiet|balanced|balanced-performance|performance)
-        sudo "$HELPER" "$1"
-        echo "current: $(cat $PP)"
+        sudo "$HELPER" "$1" || exit 1
+        echo "current: $(cat "$PP")"
         ;;
     -h|--help|help)
         echo "usage: profile [quiet|balanced|balanced-performance|performance|list|status]"

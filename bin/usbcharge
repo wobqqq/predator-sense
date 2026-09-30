@@ -5,7 +5,7 @@
 #   usbcharge            show status
 #   usbcharge off        disable
 #   usbcharge 10|20|30   enable, stop when battery reaches that %
-UC=/sys/devices/platform/acer-wmi/predator_sense/usb_charging
+UC=${PREDATOR_SENSE_SYSFS:-/sys}/devices/platform/acer-wmi/predator_sense/usb_charging
 
 w() {
     [ -w "$UC" ] || { echo "no write permission on $UC (linuwu_sense group?)" >&2; exit 1; }
