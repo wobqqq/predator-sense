@@ -193,7 +193,7 @@ usbcharge 10|20|30   enable, stop at that battery %
 
 ## Development
 
-Everything runs in Docker; only `docker` and `make` are needed:
+Everything runs in Docker; only Docker with Compose and `make` are needed (the images are in `docker-compose.yaml`):
 
 ```bash
 make lint    # ShellCheck + bash -n on every script
