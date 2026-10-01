@@ -28,7 +28,7 @@ This code drives fans, power limits and charging of a real laptop, as root. Ever
 
 ## 4. The driver
 
-- The module must build for a kernel other than the running one: `make build` builds against Fedora's newest `kernel-devel` in a container, and CI does it weekly.
+- The module must build for a kernel other than the running one: `make build` builds against Fedora's newest `kernel-devel` in a container, and CI does it on every pull request.
 - `dkms.conf` calls kbuild directly; never route the DKMS build through a target that uses `sudo` or signs the module.
 - Keep the DMI quirk for the PT316-51s. A new model gets its own quirk, never a wider match.
 - Kernel API changes (as the `strncpy()` → `memcpy()` fix for 7.2) keep the older supported kernels building.

@@ -202,7 +202,7 @@ make build   # builds the driver against the newest Fedora kernel
 make ready   # all of the above
 ```
 
-CI runs the same on every pull request, and builds the driver every week so a new Fedora kernel that breaks it is caught early. Changes go through pull requests; see [CONTRIBUTING.md](CONTRIBUTING.md). Found a laptop where it works (or doesn't)? Open a **Hardware report** issue.
+CI runs the same on every pull request, including the driver build against the newest Fedora kernel. Changes go through pull requests; see [CONTRIBUTING.md](CONTRIBUTING.md). Found a laptop where it works (or doesn't)? Open a **Hardware report** issue.
 
 ---
 
