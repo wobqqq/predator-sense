@@ -1,0 +1,23 @@
+x-code: &code
+  volumes:
+    - .:/code
+  working_dir: /code
+
+services:
+  shellcheck:
+    <<: *code
+    image: koalaman/shellcheck:v0.11.0
+    profiles: [checks]
+
+  bats:
+    <<: *code
+    image: bats/bats:1.11.1
+    user: ${HOST_UID:-1000}:${HOST_GID:-1000}
+    profiles: [checks]
+
+  fedora:
+    image: fedora:latest
+    volumes:
+      - .:/code:ro
+    working_dir: /code
+    profiles: [checks]

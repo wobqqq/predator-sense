@@ -1,8 +1,9 @@
 SHELL := /bin/bash
 
-SHELLCHECK := docker run --rm -v "$(CURDIR)":/code -w /code koalaman/shellcheck:v0.11.0
-BATS := docker run --rm -u "$(shell id -u):$(shell id -g)" -v "$(CURDIR)":/code -w /code bats/bats:1.11.1
-FEDORA := docker run --rm -v "$(CURDIR)":/code:ro -w /code fedora:latest
+RUN := docker compose run --rm --quiet-pull
+SHELLCHECK := $(RUN) shellcheck
+BATS := HOST_UID=$(shell id -u) HOST_GID=$(shell id -g) $(RUN) bats
+FEDORA := $(RUN) fedora
 
 SCRIPTS := install.sh uninstall.sh $(wildcard bin/*) $(wildcard scripts/*.sh) tests/helpers.bash
 

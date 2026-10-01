@@ -10,7 +10,7 @@ It runs as root, loads a kernel module and drives fans and power limits. **A mis
 
 ## The self-check gate (run before every commit)
 
-Everything runs in Docker; the host needs only `docker` and `make`.
+Everything runs in Docker; the host needs only Docker with Compose and `make`; the images are listed in `docker-compose.yaml`.
 
 ```bash
 make lint    # ShellCheck (style level) on every script and test, plus bash -n
